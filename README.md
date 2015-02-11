@@ -12,6 +12,7 @@ GHC 7.8.x
 ```
 cabal sandbox init
 cabal update
+cabal install alex happy
 cabal install --dependencies-only
 cabal build
 ```
