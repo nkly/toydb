@@ -1,0 +1,51 @@
+Command ::= (CreateTable | CreateIndex | DropTable | DropIndex | Select | Insert | Update | Delete | Vacuum) ';'
+
+CreateTable ::= 'CREATE TABLE' TableName '(' (ColumnDef ',')+ ')'
+
+CreateIndex ::= 'CREATE INDEX' IndexName 'ON' TableName '(' (ColumnName ',')+ ')'
+
+DropTable ::= 'DROP TABLE' TableName
+
+DropIndex ::= 'DROP INDEX' IndexName
+
+Select ::= 'SELECT' (((QualifiedColumn | TableName '.*') ',')+ | '*') 'FROM' ((TableName ('AS' Alias)?) ',')+ ('WHERE' WhereClause)? ('LIMIT' Num)?
+
+Insert ::= 'INSERT INTO' TableName 'VALUES' '(' (Value ',')+ ')'
+
+Update ::= 'UPDATE' TableName 'SET' '(' (ColumnName '=' Value ',')+ ')' ('WHERE' WhereClause)?
+
+Delete ::= 'DELETE FROM' TableName ('WHERE' WhereClause)?
+
+Vacuum ::= 'VACUUM'
+
+WhereClause ::= (QualifiedColumn ComparisonOp QualifiedColumn LogicalOp)+
+
+ComparisonOp ::= '<' | '<=' | '==' | '!=' | '>=' | '>'
+
+LogicalOp ::= 'AND' | 'OR'
+
+ColumnDef ::= ColumnName TypeName
+
+TypeName ::= 'int' | 'double' | 'varchar' '(' Num ')'
+
+QualifiedColumn ::= ((TableName '.')? ColumnName)
+
+TableName ::= Name
+
+ColumnName ::= Name
+
+IndexName ::= Name
+
+Alias ::= Name
+
+Name ::= [a-zA-Z0-9]+
+
+Num ::= [1-9][0-9]*
+
+Value ::= Int | Double | String
+
+Int ::= ('+'|'-')? [1-9][0-9]*
+
+Double ::= Int '.' [0-9]*
+
+String ::= '"' [^"] '"'
