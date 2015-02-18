@@ -8,7 +8,7 @@ DropTable ::= 'DROP TABLE' TableName
 
 DropIndex ::= 'DROP INDEX' IndexName
 
-Select ::= 'SELECT' (((QualifiedColumn | TableName '.*') ',')+ | '*') 'FROM' ((TableName ('AS' Alias)?) ',')+ ('WHERE' WhereClause)? ('LIMIT' Num)?
+Select ::= 'SELECT' Projection 'FROM' (TableName ',')+ ('WHERE' WhereClause)? ('LIMIT' Num)?
 
 Insert ::= 'INSERT INTO' TableName 'VALUES' '(' (Value ',')+ ')'
 
@@ -18,11 +18,17 @@ Delete ::= 'DELETE FROM' TableName ('WHERE' WhereClause)?
 
 Vacuum ::= 'VACUUM'
 
-WhereClause ::= (QualifiedColumn ComparisonOp QualifiedColumn LogicalOp)+
+Projection ::= '*' | (Selector ',')+
+
+Selector ::= ColumnName | ColumnName 'AS' Alias | QualifiedColumn | QualifiedColumn 'AS' Alias | TableName '.*'
+
+WhereClause ::= WhereClause 'OR' WhereClause1 | WhereClause1
+
+WhereClause1 ::= WhereClause1 'AND' WhereTerm | WhereTerm
+
+WhereTerm ::= WhereSelector ComparisonOp WhereSelector | '(' WhereClause ')'
 
 ComparisonOp ::= '<' | '<=' | '==' | '!=' | '>=' | '>'
-
-LogicalOp ::= 'AND' | 'OR'
 
 ColumnDef ::= ColumnName TypeName
 
