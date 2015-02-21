@@ -71,6 +71,13 @@ testSelect = testGroup "SELECT"
                 ||| (ws "str" `Eq` wc "a"))
             Nothing)
     , testParse
+        "select * from test where a > 10 and (b < 20.0 or 'str' == a);"
+        (Select All ["test"]
+            (Just $ (wc "a" `Gt` wi 10)
+                &&& ((wc "b" `Lt` wd 20.0)
+                        ||| (ws "str" `Eq` wc "a")))
+            Nothing)
+    , testParse
         "select * from test where a > 10 limit 5;"
         (Select All ["test"] (Just $ wc "a" `Gt` wi 10) (Just 5))
     ]
