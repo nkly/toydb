@@ -1,4 +1,4 @@
-module TestParser where
+module Parser where
 
 import Test.Framework.Providers.API
 import Test.Framework.Providers.HUnit
