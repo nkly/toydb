@@ -4,9 +4,8 @@
 name:                toydb
 version:             0.1.0
 synopsis:            Dead simple SQL database
-homepage:            http://dancingrobot84.com/toydb
-license:             BSD2
-license-file:        LICENSE
+homepage:            http://github.com/dancingrobot84/toydb
+license:             MIT
 author:              Nikolay Obedin
 maintainer:          dancingrobot84@gmail.com
 category:            Database
