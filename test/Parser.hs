@@ -1,8 +1,6 @@
 module Parser where
 
-import Test.Framework.Providers.API
-import Test.Framework.Providers.HUnit
-import Test.HUnit
+import Test.Hspec
 
 import Language.Sql.Parser
 import Language.Sql.Command
@@ -23,94 +21,76 @@ infixr 3 &&&
 infixr 2 |||
 
 
-testParse cmd exp = testCase (show cmd) $ assertEqual "" exp (parseCommand cmd)
+shouldBeParsedAs cmd exp =
+    it ("should parse " ++ show cmd) $
+        exp `shouldBe` (parseCommand cmd)
 
-testSelect = testGroup "SELECT"
-    [ testParse
-        "select * from test;"
+testSelect = do
+    "select * from test;" `shouldBeParsedAs`
         (Select All ["test"] Nothing Nothing)
-
-    , testParse
-        "select * from foo, bar;"
+    "select * from foo, bar;" `shouldBeParsedAs`
         (Select All ["foo", "bar"] Nothing Nothing)
-
-    , testParse
-        "select foo.*, bar.* from foo, bar;"
+    "select foo.*, bar.* from foo, bar;" `shouldBeParsedAs`
         (Select (Some [WholeTable "foo", WholeTable "bar"])
                 ["foo", "bar"] Nothing Nothing)
 
     -- Testing column selectors
-
-    , testParse
-        "select a, b from test;"
+    "select a, b from test;" `shouldBeParsedAs`
         (Select (Some [col "a" `as` "a", col "b" `as` "b"])
                 ["test"] Nothing Nothing)
-    , testParse
-        "select test.a from test;"
+    "select test.a from test;" `shouldBeParsedAs`
         (Select (Some [(qcol "test" "a") `as` "test.a"])
                 ["test"] Nothing Nothing)
-    , testParse
-        "select a as b from test;"
+    "select a as b from test;" `shouldBeParsedAs`
         (Select (Some [col "a" `as` "b"])
                 ["test"] Nothing Nothing)
-    , testParse
-        "select test.a as b from test;"
+    "select test.a as b from test;" `shouldBeParsedAs`
         (Select (Some [(qcol "test" "a") `as` "b"])
                 ["test"] Nothing Nothing)
 
     -- Testing WHERE and LIMIT
-
-    , testParse
-        "select * from test where a > 10;"
+    "select * from test where a > 10;" `shouldBeParsedAs`
         (Select All ["test"] (Just $ wc "a" `Gt` wi 10) Nothing)
-    , testParse
-        "select * from test where a > 10 and b < 20.0 or 'str' == a;"
-        (Select All ["test"]
-            (Just $ (wc "a" `Gt` wi 10)
-                &&& (wc "b" `Lt` wd 20.0)
-                ||| (ws "str" `Eq` wc "a"))
-            Nothing)
-    , testParse
-        "select * from test where a > 10 and (b < 20.0 or 'str' == a);"
-        (Select All ["test"]
-            (Just $ (wc "a" `Gt` wi 10)
-                &&& ((wc "b" `Lt` wd 20.0)
-                        ||| (ws "str" `Eq` wc "a")))
-            Nothing)
-    , testParse
-        "select * from test where a > 10 limit 5;"
+    "select * from test where a > 10 and b < 20.0 or 'str' == a;"
+        `shouldBeParsedAs`
+            (Select All ["test"]
+                (Just $ (wc "a" `Gt` wi 10)
+                    &&& (wc "b" `Lt` wd 20.0)
+                    ||| (ws "str" `Eq` wc "a"))
+                Nothing)
+    "select * from test where a > 10 and (b < 20.0 or 'str' == a);"
+        `shouldBeParsedAs`
+            (Select All ["test"]
+                (Just $ (wc "a" `Gt` wi 10)
+                    &&& ((wc "b" `Lt` wd 20.0)
+                            ||| (ws "str" `Eq` wc "a")))
+                Nothing)
+    "select * from test where a > 10 limit 5;" `shouldBeParsedAs`
         (Select All ["test"] (Just $ wc "a" `Gt` wi 10) (Just 5))
-    ]
 
-testCreateDrop = testGroup "CREATE and DROP"
-    [ testParse
-        "create table test (foo int, bar double, baz varchar(10));"
-        (CreateTable "test"
-            [("foo", ColInt), ("bar", ColDouble), ("baz", ColVarchar 10)])
-    , testParse
-        "create index test on test (foo, bar);"
+testCreateDrop = do
+    "create table test (foo int, bar double, baz varchar(10));"
+        `shouldBeParsedAs`
+            (CreateTable "test"
+                [("foo", ColInt), ("bar", ColDouble), ("baz", ColVarchar 10)])
+    "create index test on test (foo, bar);" `shouldBeParsedAs`
         (CreateIndex "test" "test" ["foo", "bar"])
-    , testParse
-        "drop table test;"
+    "drop table test;" `shouldBeParsedAs`
         (DropTable "test")
-    , testParse
-        "drop index test;"
+    "drop index test;" `shouldBeParsedAs`
         (DropIndex "test")
-    ]
 
-testInsertUpdateDelete = testGroup "INSERT, UPDATE, DELETE"
-    [ testParse
-        "insert into test values (1, 20.0, 'some str');"
+testInsertUpdateDelete = do
+    "insert into test values (1, 20.0, 'some str');" `shouldBeParsedAs`
         (Insert "test" [VInt 1, VDouble 20.0, VString "some str"])
-    , testParse
-        "update test set (foo=1, bar=2.1, baz='some str');"
+    "update test set (foo=1, bar=2.1, baz='some str');" `shouldBeParsedAs`
         (Update "test"
             [("foo", VInt 1), ("bar", VDouble 2.1), ("baz", VString "some str")]
             Nothing)
-    , testParse
-        "delete from test;"
+    "delete from test;" `shouldBeParsedAs`
         (Delete "test" Nothing)
-    ]
 
-testParser = testGroup "Parser"
-    [ testSelect, testCreateDrop, testInsertUpdateDelete ]
+testParser = do
+    testSelect
+    testCreateDrop
+    testInsertUpdateDelete

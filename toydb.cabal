@@ -38,6 +38,4 @@ test-suite tests
                      , Language.Sql.Parser
   build-depends:       base
                      , array
-                     , test-framework
-                     , test-framework-hunit
-                     , HUnit
+                     , hspec

@@ -1,7 +1,8 @@
 module Main where
 
-import Test.Framework.Runners.Console
+import Test.Hspec
 import Parser
 
-main = defaultMain [testParser]
+main = hspec $ do
+    describe "Parser" testParser
 
