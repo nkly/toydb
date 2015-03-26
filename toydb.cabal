@@ -4,8 +4,10 @@
 name:                toydb
 version:             0.1.0
 synopsis:            Dead simple SQL database
+description:         Dead simple SQL database written for solely educational purposes
 homepage:            http://github.com/dancingrobot84/toydb
 license:             MIT
+license-file:        LICENSE
 author:              Nikolay Obedin
 maintainer:          dancingrobot84@gmail.com
 category:            Database
@@ -19,7 +21,7 @@ library
   other-modules:       Database.Toy.Language.Lexer
                      , Database.Toy.Language.Parser
                      , Database.Toy.Internal.Command
-  build-depends:       base
+  build-depends:       base >=4.7 && <4.8
                      , array
 
 executable toydb
@@ -38,6 +40,10 @@ test-suite tests
   other-modules:       Database.Toy.Language.Lexer
                      , Database.Toy.Language.Parser
                      , Database.Toy.Internal.Command
-  build-depends:       base
+  build-depends:       base >=4.7 && <4.8
                      , array
                      , hspec
+
+source-repository head
+  type:     git
+  location: https://github.com/dancingrobot84/toydb
