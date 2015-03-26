@@ -16,8 +16,9 @@ library
   hs-source-dirs:      src
   default-language:    Haskell2010
   build-tools:         alex, happy
-  other-modules:       Language.Sql.Lexer
-                     , Language.Sql.Parser
+  other-modules:       Database.Toy.Language.Lexer
+                     , Database.Toy.Language.Parser
+                     , Database.Toy.Internal.Command
   build-depends:       base
                      , array
 
@@ -34,8 +35,9 @@ test-suite tests
   hs-source-dirs:      src, test
   default-language:    Haskell2010
   build-tools:         alex, happy
-  other-modules:       Language.Sql.Lexer
-                     , Language.Sql.Parser
+  other-modules:       Database.Toy.Language.Lexer
+                     , Database.Toy.Language.Parser
+                     , Database.Toy.Internal.Command
   build-depends:       base
                      , array
                      , hspec

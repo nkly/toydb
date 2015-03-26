@@ -1,4 +1,4 @@
-module Language.Sql.Command where
+module Database.Toy.Internal.Command where
 
 
 type TableName  = String

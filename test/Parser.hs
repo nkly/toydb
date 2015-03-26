@@ -2,8 +2,8 @@ module Parser where
 
 import Test.Hspec
 
-import Language.Sql.Parser
-import Language.Sql.Command
+import Database.Toy.Language.Parser
+import Database.Toy.Internal.Command
 
 
 as    = OneColumn
