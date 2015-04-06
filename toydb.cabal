@@ -21,8 +21,19 @@ library
   other-modules:       Database.Toy.Language.Lexer
                      , Database.Toy.Language.Parser
                      , Database.Toy.Internal.Command
+                     , Database.Toy.Internal.Pager.Monad
+                     , Database.Toy.Internal.Pager.Types
   build-depends:       base >=4.7 && <4.8
                      , array
+                     , mtl
+                     , bytestring
+                     , safe
+                     , MissingH
+                     , cereal
+                     , hashable
+                     , hashtables
+                     , time
+                     , lens
 
 executable toydb
   main-is:             Main.hs
