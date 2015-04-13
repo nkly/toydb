@@ -1,10 +1,11 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, DeriveDataTypeable #-}
-module Database.Toy.Internal.Pager.Monad
+module Database.Toy.Internal.Pager.Trans
     ( PagerConf(..)
     , PagerState(..)
     , PagerException(..)
     , PageId(..)
     , Page(..)
+    , PagerT
     , runPager
     , readPage
     , writePage

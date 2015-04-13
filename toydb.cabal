@@ -21,7 +21,7 @@ library
   other-modules:       Database.Toy.Language.Lexer
                      , Database.Toy.Language.Parser
                      , Database.Toy.Internal.Command
-                     , Database.Toy.Internal.Pager.Monad
+                     , Database.Toy.Internal.Pager.Trans
                      , Database.Toy.Internal.Pager.Types
   build-depends:       base >=4.7 && <4.8
                      , array
