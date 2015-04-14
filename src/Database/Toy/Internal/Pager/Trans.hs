@@ -19,6 +19,7 @@ import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.State
 import Data.Maybe
+import Data.Serialize
 import Data.Time.Clock.POSIX
 import Data.Typeable
 import Data.Word
@@ -113,7 +114,7 @@ writeToDisk pageId = do
         result <- HT.lookup cache pageId
         maybe (throwIO $ PageNotFound pageId) return result
     handle <- seekToPage pageId
-    liftIO $ B.hPut handle $ encodePage page
+    liftIO $ B.hPut handle $ encode page
 
 seekToPage :: MonadIO m => PageId -> PagerT m Handle
 seekToPage NoPageId = error "Pager.seekToPage: impossible page id"
@@ -135,7 +136,7 @@ storeInCache pageId rawPage = do
         modifyInternalState (over pagerStorageSize succ)
         return page
   where
-    decodePage0 = case decodePage rawPage of
+    decodePage0 = case decode rawPage of
         Right page -> return page
         Left _ -> liftIO $ throwIO $ PageCorrupted pageId
 
@@ -182,7 +183,7 @@ createNewPage = do
     insertWithTimestamp (view pageId page) page
     liftIO $ do
         hSeek handle SeekFromEnd 0
-        B.hPut handle $ encodePage page
+        B.hPut handle $ encode page
     modifyInternalState (over pagerStorageSize succ)
     modifyExternalState (over pagerPagesCount succ)
     return page
