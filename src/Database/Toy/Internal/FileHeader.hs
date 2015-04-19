@@ -47,7 +47,7 @@ readHeader handle = do
     either (throwIO . CantReadHeader) return $ decode headerBytes
 
 writeHeader :: FileHeader -> Handle -> IO ()
-writeHeader header handle = do
+writeHeader header handle =
     B.hPut handle $ encode header
 
 headerToPagerState :: FileHeader -> PagerState
