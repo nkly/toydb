@@ -23,6 +23,7 @@ library
                      , Database.Toy.Internal.Command
                      , Database.Toy.Internal.Pager.Trans
                      , Database.Toy.Internal.Pager.Types
+                     , Database.Toy.Internal.FileHeader
   build-depends:       base >=4.7 && <4.8
                      , array
                      , mtl

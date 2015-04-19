@@ -87,7 +87,7 @@ newPage = do
         modifyExternalState (set pagerFreelistStartId nextId)
         return (Page pageId payload NoPageId)
 
--- Hidden Part --
+
 
 newtype PagerT m a = PagerT (ReaderT PagerConf (StateT (InternalState, PagerState) m) a)
     deriving (Functor, Applicative, Monad, MonadIO, MonadReader PagerConf)
@@ -155,7 +155,7 @@ insertWithTimestamp :: MonadIO m => PageId -> Page -> PagerT m ()
 insertWithTimestamp pageId page = do
     (InternalState cache cacheSize) <- getInternalState id
     maxPagesInMem <- asks $ view pagerMaxPagesInMemory
-    isInCache <- liftIO $ fmap isJust $ HT.lookup cache pageId
+    isInCache <- liftIO $ isJust <$> HT.lookup cache pageId
     when (not isInCache && cacheSize == maxPagesInMem) dumpLRUPage
     liftIO $ do
         timestamp <- getPOSIXTime
@@ -163,7 +163,7 @@ insertWithTimestamp pageId page = do
 
 dumpLRUPage :: MonadIO m => PagerT m ()
 dumpLRUPage = do
-    now <- liftIO $ getPOSIXTime
+    now <- liftIO getPOSIXTime
     cache <- getInternalState $ view pagerStorage
     (pageToDump, _) <- liftIO $ HT.foldM lruPredicate (NoPageId, now) cache
     writeToDisk pageToDump
@@ -178,7 +178,7 @@ createNewPage :: MonadIO m => PagerT m Page
 createNewPage = do
     pagesCount <- getExternalState $ view pagerPagesCount
     (PagerConf handle pageSize _ _) <- ask
-    let payload = B.replicate ((fromIntegral pageSize) - pageOverhead) 0
+    let payload = B.replicate (fromIntegral pageSize - pageOverhead) 0
         page = Page (PageId pagesCount) payload NoPageId
     insertWithTimestamp (view pageId page) page
     liftIO $ do
@@ -199,3 +199,36 @@ getExternalState fn = PagerT $ gets (fn . snd)
 
 modifyExternalState :: Monad m => (PagerState -> PagerState) -> PagerT m ()
 modifyExternalState fn = PagerT $ modify $ \(is, es) -> (is, fn es)
+
+{-
+Invariants:
+    - Schema starts on page where id == 0
+    - page.nextId == 0 means 'there is no next page'
+
+Pager:
+    - read data from page (readPage :: PageId -> IO B.ByteString)
+    - get next page id (getNextPageId :: PageId -> IO PageId) ???
+    - write data into page (writePage :: PageId -> B.ByteString -> IO ()) ?
+    - mark page as empty (markPageEmpty :: PageId -> IO ())
+    - create new page or reuse empty one (newPage :: IO PageId)
+
+Read schema:
+    read page where id == 0
+    while page.nextId != 0
+        read page where id == page.nextId
+    combine all data
+    decode
+
+Write schema:
+    encode schema
+    read page where id == 0
+    while !data.allStored
+        write chunk into page
+        if page.nextId != 0
+            load page where id == page.nextId
+        else
+            create new page
+    while page.nextId != 0
+      mark page as empty
+      load page where id == page.nextId
+-}
