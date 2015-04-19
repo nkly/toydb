@@ -31,7 +31,6 @@ import Database.Toy.Internal.Pager.Types
 
 
 data PagerException = PageNotFound PageId
-                    | InvalidPageId
                     | PageCorrupted PageId
                     | PageOverflow PageId
     deriving (Show, Typeable)
@@ -96,7 +95,7 @@ instance MonadTrans PagerT where
     lift = PagerT . lift . lift
 
 pageExists :: MonadIO m => PageId -> PagerT m Bool
-pageExists NoPageId = liftIO $ throwIO InvalidPageId
+pageExists NoPageId = error "Pager.pageExists: impossible page id"
 pageExists (PageId pageId) = do
     pagesCount <- getExternalState $ view pagerPagesCount
     return (pageId < pagesCount)
