@@ -11,21 +11,21 @@ Stack 0.1.6.0 or higher (https://github.com/commercialhaskell/stack)
 
 1. Clone this repository:
 
-```
-$ git clone https://github.com/dancingrobot84/toydb.git
-```
+  ```
+  $ git clone https://github.com/dancingrobot84/toydb.git
+  ```
 
 2. In repository's directory run the following:
 
-```
-$  stack setup && stack build
-```
+  ```
+  $  stack setup && stack build
+  ```
 
-If you want to run tests as well, execute this:
+  If you want to run tests as well, execute this:
 
-```
-$ stack test
-```
+  ```
+  $ stack test
+  ```
 
 ## Usage
 
