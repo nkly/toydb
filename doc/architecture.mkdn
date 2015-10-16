@@ -62,7 +62,11 @@ withDatabase "file.db" $ do
 
 ### Query compiler (Parser + Optimizer)
 
-TBD.
+Possible optimizations:
+
+- Optimize logic expressions
+- Remove duplicate joins and expressions
+- What else?
 
 ### Executor (VM Interpreter)
 
@@ -71,3 +75,22 @@ TBD.
 ### Page Manager
 
 TBD.
+
+## Literature
+
+Overall:
+
+- http://coding-geek.com/how-databases-work/
+- http://db.cs.berkeley.edu/papers/fntdb07-architecture.pdf
+
+Storing data:
+
+- http://blog.jcole.us/2013/01/07/the-physical-structure-of-innodb-index-pages/
+- http://blog.jcole.us/2013/01/10/btree-index-structures-in-innodb/
+- https://sqlite.org/fileformat2.html
+
+Compilation and execution of a query:
+
+- https://sqlite.org/vdbe.html
+- https://sqlite.org/opcode.html
+- https://sqlite.org/optoverview.html
