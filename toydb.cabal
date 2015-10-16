@@ -24,7 +24,7 @@ library
                      , Database.Toy.Internal.Pager.Trans
                      , Database.Toy.Internal.Pager.Types
                      , Database.Toy.Internal.FileHeader
-  build-depends:       base >=4.7 && <4.8
+  build-depends:       base >= 4.7 && < 5
                      , array
                      , mtl
                      , bytestring
@@ -52,7 +52,7 @@ test-suite tests
   other-modules:       Database.Toy.Language.Lexer
                      , Database.Toy.Language.Parser
                      , Database.Toy.Internal.Command
-  build-depends:       base >=4.7 && <4.8
+  build-depends:       base >= 4.7 && < 5
                      , array
                      , hspec
 

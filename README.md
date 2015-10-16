@@ -5,16 +5,26 @@ totally for educational purposes.
 
 ## Requirements
 
-GHC 7.8.x
+Stack 0.1.6.0 or higher (https://github.com/commercialhaskell/stack)
 
-## Building
+## Building from sources
+
+1. Clone this repository:
 
 ```
-cabal sandbox init
-cabal update
-cabal install alex happy
-cabal install --dependencies-only
-cabal build
+$ git clone https://github.com/dancingrobot84/toydb.git
+```
+
+2. In repository's directory run the following:
+
+```
+$  stack setup && stack build
+```
+
+If you want to run tests as well, execute this:
+
+```
+$ stack test
 ```
 
 ## Usage
