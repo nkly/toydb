@@ -1,5 +1,10 @@
-module Database.Toy.Internal.Command where
+{-|
+    This module contains types that describe SQL statement to be executed by
+    DBMS.
+-}
 
+{-# LANGUAGE BangPatterns #-}
+module Database.Toy.Internal.Command where
 
 type TableName  = String
 type ColumnName = String
@@ -17,16 +22,21 @@ data Command = CreateTable TableName [(ColumnName, ColumnType)]
              | Vacuum
     deriving (Show, Read, Eq)
 
-data ColumnType = ColInt | ColDouble | ColVarchar Int
+data ColumnType = ColumnTypeInt
+                | ColumnTypeDouble
+                | ColumnTypeVarchar Int
     deriving (Show, Read, Eq)
 
-data Projection = All | Some [Selector]
+data Projection = All
+                | Some [Selector]
     deriving (Show, Read, Eq)
 
-data Selector = OneColumn ColumnSelector Alias | WholeTable TableName
+data Selector = OneColumn ColumnSelector Alias
+              | WholeTable TableName
     deriving (Show, Read, Eq)
 
-data ColumnSelector = Column ColumnName | QualColumn TableName ColumnName
+data ColumnSelector = Column ColumnName
+                    | QualifiedColumn TableName ColumnName
     deriving (Show, Read, Eq)
 
 data WhereClause = And  WhereClause     WhereClause
@@ -39,8 +49,11 @@ data WhereClause = And  WhereClause     WhereClause
                  | Lt   WhereSelector   WhereSelector
     deriving (Show, Read, Eq)
 
-data WhereSelector = WSColumn ColumnSelector | WSValue Value
+data WhereSelector = WhereSelectorColumn ColumnSelector
+                   | WhereSelectorValue Value
     deriving (Show, Read, Eq)
 
-data Value = VInt Int | VDouble Double | VString String
+data Value = ValueInt !Int
+           | ValueDouble !Double
+           | ValueString !String
     deriving (Show, Read, Eq)

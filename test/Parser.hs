@@ -8,12 +8,16 @@ import Database.Toy.Internal.Command
 
 as    = OneColumn
 col   = Column
-qcol  = QualColumn
+qcol  = QualifiedColumn
 
-wc  = WSColumn . Column
-wi  = WSValue . VInt
-wd  = WSValue . VDouble
-ws  = WSValue . VString
+wc  = WhereSelectorColumn . Column
+wi  = WhereSelectorValue  . ValueInt
+wd  = WhereSelectorValue  . ValueDouble
+ws  = WhereSelectorValue  . ValueString
+
+i = ValueInt
+d = ValueDouble
+s = ValueString
 
 (&&&) = And
 infixr 3 &&&
@@ -72,7 +76,9 @@ testCreateDrop = do
     "create table test (foo int, bar double, baz varchar(10));"
         `shouldBeParsedAs`
             (CreateTable "test"
-                [("foo", ColInt), ("bar", ColDouble), ("baz", ColVarchar 10)])
+                [("foo", ColumnTypeInt),
+                 ("bar", ColumnTypeDouble),
+                 ("baz", ColumnTypeVarchar 10)])
     "create index test on test (foo, bar);" `shouldBeParsedAs`
         (CreateIndex "test" "test" ["foo", "bar"])
     "drop table test;" `shouldBeParsedAs`
@@ -82,10 +88,10 @@ testCreateDrop = do
 
 testInsertUpdateDelete = do
     "insert into test values (1, 20.0, 'some str');" `shouldBeParsedAs`
-        (Insert "test" [VInt 1, VDouble 20.0, VString "some str"])
+        (Insert "test" [i 1, d 20.0, s "some str"])
     "update test set (foo=1, bar=2.1, baz='some str');" `shouldBeParsedAs`
         (Update "test"
-            [("foo", VInt 1), ("bar", VDouble 2.1), ("baz", VString "some str")]
+            [("foo", i 1), ("bar", d 2.1), ("baz", s "some str")]
             Nothing)
     "delete from test;" `shouldBeParsedAs`
         (Delete "test" Nothing)

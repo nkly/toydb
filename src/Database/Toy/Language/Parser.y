@@ -80,9 +80,9 @@ Command1 : 'create table' NAME '(' ColumnDefs ')'
 ColumnDefs : ColumnDef                      { [$1] }
            | ColumnDefs ',' ColumnDef       { $1 ++ [$3] }
 
-ColumnDef : NAME 'int'                  { ($1, ColInt) }
-          | NAME 'double'               { ($1, ColDouble) }
-          | NAME 'varchar' '(' INT ')'  { ($1, ColVarchar (read $4)) }
+ColumnDef : NAME 'int'                  { ($1, ColumnTypeInt) }
+          | NAME 'double'               { ($1, ColumnTypeDouble) }
+          | NAME 'varchar' '(' INT ')'  { ($1, ColumnTypeVarchar (read $4)) }
 
 ColumnNames : NAME                  { [$1] }
             | ColumnNames ',' NAME  { $1 ++ [$3] }
@@ -95,8 +95,8 @@ Selectors : Selector                { [$1] }
 
 Selector : NAME                     { OneColumn (Column $1) $1 }
          | NAME 'as' NAME           { OneColumn (Column $1) $3 }
-         | NAME '.' NAME            { OneColumn (QualColumn $1 $3) ($1 ++ "." ++ $3) }
-         | NAME '.' NAME 'as' NAME  { OneColumn (QualColumn $1 $3) $5 }
+         | NAME '.' NAME            { OneColumn (QualifiedColumn $1 $3) ($1 ++ "." ++ $3) }
+         | NAME '.' NAME 'as' NAME  { OneColumn (QualifiedColumn $1 $3) $5 }
          | NAME '.' '*'             { WholeTable $1 }
 
 Tables : NAME               { [$1] }
@@ -119,9 +119,9 @@ WhereTerm : WhereSelector '>' WhereSelector     { Gt $1 $3 }
           | WhereSelector '<' WhereSelector     { Lt $1 $3 }
           | '(' WhereClause ')'                 { $2 }
 
-WhereSelector : NAME            { WSColumn (Column $1) }
-              | NAME '.' NAME   { WSColumn (QualColumn $1 $3) }
-              | Value           { WSValue $1 }
+WhereSelector : NAME            { WhereSelectorColumn (Column $1) }
+              | NAME '.' NAME   { WhereSelectorColumn (QualifiedColumn $1 $3) }
+              | Value           { WhereSelectorValue $1 }
 
 MaybeLimit : 'limit' INT    { Just (read $2 :: Int) }
            | {- empty -}    { Nothing }
@@ -132,9 +132,9 @@ InsertValues : Value                    { [$1] }
 UpdateValues : NAME '=' Value                   { [($1, $3)] }
              | UpdateValues ',' NAME '=' Value  { $1 ++ [($3, $5)] }
 
-Value : INT     { VInt (read $1) }
-      | DOUBLE  { VDouble (read $1) }
-      | STRING  { VString $1 }
+Value : INT     { ValueInt (read $1) }
+      | DOUBLE  { ValueDouble (read $1) }
+      | STRING  { ValueString $1 }
 
 {
 parseError :: [Token] -> a
