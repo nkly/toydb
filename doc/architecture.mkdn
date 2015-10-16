@@ -1,0 +1,73 @@
+# Architecture notes
+
+This documents describes what features will be implemented and how it's going
+to be done.
+
+## Database features
+
+**Datatypes:**
+
+* Integer, `int` (represented as signed 32-bit integer)
+* Double, `double` (represented as 64-bit floating-point number)
+* Fixed-size string, `varchar(n)` (represented as an array of 8-bit characters
+  padded with zeroes up to length of `n` chars)
+
+**Commands:**
+
+* Create and drop table
+* Select from table (both simple and joined)
+* Insert, update and delete
+* Create and drop index
+* Vacuum
+
+Complete command language grammar can be found in `doc/grammar.ebnf` file.
+
+## API features
+
+TBD.
+
+DBMS will be implemented as a Haskell library. An example console REPL will use
+this library to interact with database.
+
+Here is a piece of client-side pseudo-code. Something similar should be
+accomplished.
+
+```haskell
+withDatabase :: FileName -> (Some DB Monad with IO ?) -> IO ()
+withDatabase "file.db" $ do
+    -- `execute` returns `Either String Integer` where Integer stays
+    -- for "rows affected", e.g. inserted, updated, removed
+    Right _ <- execute "create table test (id int, str varchar(128));"
+    Right 1 <- execute "insert into test values (10, \"something\");"
+    Right 1 <- execute "insert into test values (42, \"something else\");"
+    Right 1 <- execute "insert into test values (500, \"yet another one\");"
+    -- `executeWithCallback` performs the same as execute, except that
+    -- it takes additional argument, that is, callback. Callback has
+    -- type `SqlRow -> IO Boolean` (or something similar) and
+    -- returns `false` if current DB operation should be interrupted
+    -- or `true` if it should be continued. Applicable for
+    -- SELECT statements only, others ignore callback
+    result  <- executeWithCallback "select * from test;" $ \row ->
+        if (row !! 0) == ValueInt 42
+            then $ return false
+            else $ do
+                putStrLn (row !! 1)
+                return true
+    case result of
+        Left error -> putStrLn error
+        Right _ -> return ()
+```
+
+## Internal design
+
+### Query compiler (Parser + Optimizer)
+
+TBD.
+
+### Executor (VM Interpreter)
+
+TBD.
+
+### Page Manager
+
+TBD.
