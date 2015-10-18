@@ -109,7 +109,7 @@ There are different possible payloads depending on what purpose page serves:
 
 ### Metadata tables
 
-There is two metadata tables in database: `tables_meta` and `indexes_meta`. They contain information about tables and indexes in database. The structure of `tables_meta` is the following:
+There are two metadata tables in database: `tables_meta` and `indexes_meta`. They contain information about tables and indexes in database. The structure of `tables_meta` is the following:
 
 | id  | name        | col_spec      | start\_page_id |
 | --- | ----------- | ------------- | -------------- |

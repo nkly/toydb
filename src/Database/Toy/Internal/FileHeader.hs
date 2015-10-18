@@ -13,20 +13,10 @@ import Control.Monad
 import Data.Serialize
 import Data.Typeable
 import Data.Word
+import Database.Toy.Internal.Pager.Types
 import System.IO
 import qualified Data.ByteString.Char8 as B
 
-import Database.Toy.Internal.Pager.Types
-
-{-
-    Header is the first 128 bytes of DB file
-    8 bytes  -- magic string, "toydb\0\0\0"
-    8 bytes  -- file spec version (current is version 1)
-    8 bytes  -- page size in bytes
-    8 bytes  -- pages count in database
-    8 bytes  -- page id of first empty page or 0 if all pages are used
-    88 bytes -- reserved
--}
 
 data FileHeader = FileHeader
     { headerPageSize        :: Word32

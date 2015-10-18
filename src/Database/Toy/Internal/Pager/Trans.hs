@@ -198,36 +198,3 @@ getExternalState fn = PagerT $ gets (fn . snd)
 
 modifyExternalState :: Monad m => (PagerState -> PagerState) -> PagerT m ()
 modifyExternalState fn = PagerT $ modify $ \(is, es) -> (is, fn es)
-
-{-
-Invariants:
-    - Schema starts on page where id == 0
-    - page.nextId == 0 means 'there is no next page'
-
-Pager:
-    - read data from page (readPage :: PageId -> IO B.ByteString)
-    - get next page id (getNextPageId :: PageId -> IO PageId) ???
-    - write data into page (writePage :: PageId -> B.ByteString -> IO ()) ?
-    - mark page as empty (markPageEmpty :: PageId -> IO ())
-    - create new page or reuse empty one (newPage :: IO PageId)
-
-Read schema:
-    read page where id == 0
-    while page.nextId != 0
-        read page where id == page.nextId
-    combine all data
-    decode
-
-Write schema:
-    encode schema
-    read page where id == 0
-    while !data.allStored
-        write chunk into page
-        if page.nextId != 0
-            load page where id == page.nextId
-        else
-            create new page
-    while page.nextId != 0
-      mark page as empty
-      load page where id == page.nextId
--}
