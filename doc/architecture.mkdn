@@ -22,6 +22,13 @@ to be done.
 
 Complete command language grammar can be found in `doc/grammar.ebnf` file.
 
+**Limits:**
+
+* Maximum length of column definition string in `CREATE TABLE` command is **1024** characters
+* Maximum length of columns list in `CREATE INDEX` command is **1024** characters
+* Maximum length of table or index name is **64** characters
+* Maximum number for `varchar` type argument is `2^20`
+
 ## API features
 
 TBD.
@@ -60,6 +67,65 @@ withDatabase "file.db" $ do
 
 ## Internal design
 
+### File format, pages and payload types
+
+The whole database is contained in one file. This file has the following structure:
+
+```
++----------+
+| Metadata |
++----------+
+| Page 0   |
++----------+
+| ...      |
++----------+
+| Page X   |
++----------+
+```
+
+**Metadata** block contains internal data necessary for DBMS to operate with database:
+
+- `fileSpecVersion :: Word8`    – File structure spec version
+- `pageSize :: Word16`          – Page size in bytes
+- `pagesNumber :: Word32`       – Number of pages in database
+- `firstEmptyPageId :: PageId`  – ID of the first empty page
+- `tablesMetaPageId :: PageId`  – ID of the first page of `tables_meta` table
+- `indexesMetaPageId :: PageId` – ID of the first page of `indexes_meta` table
+
+Metadata block has fixed size of **128** bytes. `PageId` is `Word32` with `0xFFFFFFFF` value reserved to signal that there is no ID.
+
+**Page** is a piece of data stored in database. Pages form a linked list. Each page has fixed size of `pageSize` bytes. It contains the following items:
+
+- `pageId :: PageId` – ID of the current page
+- `nextId :: PageId` – ID of the next page in chain
+- `payload :: ?` – Binary payload
+
+There are different possible payloads depending on what purpose page serves:
+
+- *Table page* – contains rows of certain table
+- *Index interior page* – contains array of IDs to children pages for each value of index key
+- *Index leaf page* – contains array of IDs to table pages for each value of index key
+- *Empty page* – contains nothing. Some time ago it belonged to one of the types above, but its payload was cleared by a sequence of `DROP INDEX` or `DROP TABLE` or `DELETE` commands.
+
+### Metadata tables
+
+There is two metadata tables in database: `tables_meta` and `indexes_meta`. They contain information about tables and indexes in database. The structure of `tables_meta` is the following:
+
+| id  | name        | col_spec      | start\_page_id |
+| --- | ----------- | ------------- | -------------- |
+| int | varchar(64) | varchar(1024) | int            |
+
+`col_spec` is exatcly the same string that was being used in `CREATE TABLE` command to define columns of particular table. `start_page_id` is ID of the first table page of a table.
+
+The structure of `indexes_meta` is the following:
+
+| id  | name        | table_id | key_spec      | start\_page_id |
+| --- | ----------- | -------- | ------------- | -------------- |
+| int | varchar(64) | int      | varchar(1024) | int            |
+
+`table_id` is identificator of the table on which index is created in `tables_meta` table. `key_spec` is exactly the same string that was being used in `CREATE INDEX` command to enumerate columns used in index. `start_page_id` is ID of the first index page of an index.
+
+
 ### Query compiler (Parser + Optimizer)
 
 Possible optimizations:
@@ -72,7 +138,7 @@ Possible optimizations:
 
 TBD.
 
-### Page Manager
+### Pager
 
 TBD.
 
