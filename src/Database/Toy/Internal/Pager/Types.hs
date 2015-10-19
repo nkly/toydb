@@ -6,6 +6,7 @@ import Data.Hashable
 import Data.Word
 import Data.Serialize
 import Data.Time.Clock.POSIX
+import Database.Toy.Internal.Util.FixedSizeSerialize
 import System.IO
 import qualified Data.ByteString as B
 import qualified Data.HashTable.IO as HT
@@ -21,9 +22,13 @@ instance Serialize PageId where
     put NoPageId    = putWord32le (-1)
     put (PageId id) = putWord32le id
 
+instance FixedSizeSerialize PageId where
+    serializedSize _ = serializedSize (0 :: Word32)
+
 instance Hashable PageId where
     hashWithSalt salt NoPageId = error "PageId.hashWithSalt: NoPageId should not be hashed"
     hashWithSalt salt (PageId pid) = hashWithSalt salt pid
+
 
 data Page = Page
     { _pageId        :: PageId
@@ -32,9 +37,6 @@ data Page = Page
     }
 
 makeLenses ''Page
-
-pageOverhead :: Num a => a
-pageOverhead = 16
 
 instance Serialize Page where
     get = do
@@ -48,6 +50,10 @@ instance Serialize Page where
         put pageId
         put nextId
         putByteString payload
+
+pageOverhead :: Num a => a
+pageOverhead = 2 * (fromIntegral $ serializedSize NoPageId)
+
 
 data PagerConf = PagerConf
     { _pagerFileHandle       :: Handle

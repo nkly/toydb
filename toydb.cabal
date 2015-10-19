@@ -23,7 +23,8 @@ library
                      , Database.Toy.Internal.Command
                      , Database.Toy.Internal.Pager.Trans
                      , Database.Toy.Internal.Pager.Types
-                     , Database.Toy.Internal.FileHeader
+                     , Database.Toy.Internal.Metadata.Types
+                     , Database.Toy.Internal.Util.FixedSizeSerialize
   build-depends:       base >= 4.7 && < 5
                      , array
                      , mtl
