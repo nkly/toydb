@@ -125,6 +125,36 @@ The structure of `indexes_meta` is the following:
 
 `table_id` is identificator of the table on which index is created in `tables_meta` table. `key_spec` is exactly the same string that was being used in `CREATE INDEX` command to enumerate columns used in index. `start_page_id` is ID of the first index page of an index.
 
+### Empty pages list
+
+Allocated pages that have their contents erased form a linked list of empty pages. It's head page is the one that has `firstEmptyPageId` ID. The list grows and shrinks from its head. When new empty page appears, its ID overwrites `firstEmptyPageId` and the former `firstEmptyPageId` ID is set as `nextPageId`.
+
+```
+Before new empty page appears:
+
+firstEmptyPageId = 1
+[ Page 1 ] -> [ Page 2 ] -> ... -> [ Page N ]
+
+After new empty page with ID == 'X' appeared:
+
+firstEmptyPageId = X
+[ Page X ] -> [ Page 1 ] -> ... -> [ Page N ]
+```
+
+When empty page needed it is taken from the list first. When it happens, `firstEmptyPageId` page is taken and
+its `nextPageId` page becomes new head of the list.
+
+```
+Before empty page is taken:
+
+firstEmptyPageId = 1
+[ Page 1 ] -> [ Page 2 ] -> ... -> [ Page N ]
+
+After empty page was taken:
+
+firstEmptyPageId = 2
+[ Page 2 ] -> [ Page 3 ] -> ... -> [ Page N ]
+```
 
 ### Query compiler (Parser + Optimizer)
 
