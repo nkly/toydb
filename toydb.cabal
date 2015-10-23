@@ -53,9 +53,21 @@ test-suite tests
   other-modules:       Database.Toy.Language.Lexer
                      , Database.Toy.Language.Parser
                      , Database.Toy.Internal.Command
+                     , Database.Toy.Internal.Pager.Types
+                     , Database.Toy.Internal.Pager.Trans
+                     , Database.Toy.Internal.Util.FixedSizeSerialize
   build-depends:       base >= 4.7 && < 5
-                     , array
                      , hspec
+                     , array
+                     , mtl
+                     , bytestring
+                     , safe
+                     , MissingH
+                     , cereal
+                     , hashable
+                     , hashtables
+                     , time
+                     , lens
 
 source-repository head
   type:     git
