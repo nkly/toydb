@@ -18,9 +18,12 @@ data PageId = PageId Word32 | NoPageId
 instance Serialize PageId where
     get = do
         id <- getWord32le
-        return $ if id == -1 then NoPageId else PageId id
-    put NoPageId    = putWord32le (-1)
-    put (PageId id) = putWord32le id
+        return $ if id == maxBound then NoPageId else PageId id
+    put NoPageId    = putWord32le maxBound
+    put (PageId id) =
+        if id == maxBound
+            then error "PageId.put: maxBound is reserved for NoPageId"
+            else putWord32le id
 
 instance FixedSizeSerialize PageId where
     serializedSize _ = serializedSize (0 :: Word32)
@@ -34,7 +37,7 @@ data Page = Page
     { _pageId        :: PageId
     , _pagePayload   :: B.ByteString
     , _pageNextId    :: PageId
-    }
+    } deriving (Show, Eq)
 
 makeLenses ''Page
 
@@ -52,7 +55,7 @@ instance Serialize Page where
         putByteString payload
 
 pageOverhead :: Num a => a
-pageOverhead = 2 * (fromIntegral $ serializedSize NoPageId)
+pageOverhead = 2 * fromIntegral (serializedSize NoPageId)
 
 
 data PagerConf = PagerConf

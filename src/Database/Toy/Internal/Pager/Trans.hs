@@ -13,6 +13,7 @@ module Database.Toy.Internal.Pager.Trans
     ) where
 
 import Control.Applicative
+import Control.Arrow (first, second)
 import Control.Exception
 import Control.Lens
 import Control.Monad
@@ -191,10 +192,10 @@ getInternalState :: Monad m => (InternalState -> a) -> PagerT m a
 getInternalState fn = PagerT $ gets (fn . fst)
 
 modifyInternalState :: Monad m => (InternalState -> InternalState) -> PagerT m ()
-modifyInternalState fn = PagerT $ modify $ \(is, es) -> (fn is, es)
+modifyInternalState fn = PagerT $ modify $ first fn
 
 getExternalState :: Monad m => (PagerState -> a) -> PagerT m a
 getExternalState fn = PagerT $ gets (fn . snd)
 
 modifyExternalState :: Monad m => (PagerState -> PagerState) -> PagerT m ()
-modifyExternalState fn = PagerT $ modify $ \(is, es) -> (is, fn es)
+modifyExternalState fn = PagerT $ modify $ second fn
