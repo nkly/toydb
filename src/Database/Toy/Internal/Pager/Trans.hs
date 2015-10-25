@@ -12,18 +12,14 @@ module Database.Toy.Internal.Pager.Trans
     , newPage
     ) where
 
-import Control.Applicative
-import Control.Arrow (first, second)
 import Control.Exception
 import Control.Lens
-import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.State
-import Data.Maybe
 import Data.Serialize
 import Data.Time.Clock.POSIX
 import Data.Typeable
-import Data.Word
+import Database.Toy.Internal.Prelude
 import System.IO
 import qualified Data.ByteString as B
 import qualified Data.HashTable.IO as HT
@@ -61,7 +57,7 @@ readPage pageId = pageExists pageId >>= readIfExists
         pageData <- readFromDisk pageId
         storeInCache pageId pageData
 
-writePage :: MonadIO m => PageId -> B.ByteString -> PagerT m ()
+writePage :: MonadIO m => PageId -> ByteString -> PagerT m ()
 writePage pageId toWrite = do
     pageSize <- asks (fromIntegral . view pagerPageSizeBytes)
     if (B.length toWrite > pageSize - pageOverhead)
@@ -101,7 +97,7 @@ pageExists (PageId pageId) = do
     pagesCount <- getExternalState $ view pagerPagesCount
     return (pageId < pagesCount)
 
-readFromDisk :: MonadIO m => PageId -> PagerT m B.ByteString
+readFromDisk :: MonadIO m => PageId -> PagerT m ByteString
 readFromDisk pageId = do
     pageSize <- asks $ view pagerPageSizeBytes
     handle <- seekToPage pageId
@@ -125,7 +121,7 @@ seekToPage (PageId pid) = do
         hSeek handle AbsoluteSeek offset
         return handle
 
-storeInCache :: MonadIO m => PageId -> B.ByteString -> PagerT m Page
+storeInCache :: MonadIO m => PageId -> ByteString -> PagerT m Page
 storeInCache pageId rawPage = do
     page@(Page realPageId _ _) <- decodePage0
     if realPageId /= pageId

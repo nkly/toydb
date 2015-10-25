@@ -1,5 +1,7 @@
 {
 module Database.Toy.Internal.Language.Lexer (Token(..), TokenClass(..), scanTokens) where
+
+import Database.Toy.Internal.Prelude
 }
 
 %wrapper "posn"

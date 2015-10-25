@@ -3,12 +3,10 @@ module Database.Toy.Internal.Pager.Types where
 
 import Control.Lens
 import Data.Hashable
-import Data.Word
 import Data.Serialize
 import Data.Time.Clock.POSIX
+import Database.Toy.Internal.Prelude
 import Database.Toy.Internal.Util.FixedSizeSerialize
-import System.IO
-import qualified Data.ByteString as B
 import qualified Data.HashTable.IO as HT
 
 
@@ -35,7 +33,7 @@ instance Hashable PageId where
 
 data Page = Page
     { _pageId        :: PageId
-    , _pagePayload   :: B.ByteString
+    , _pagePayload   :: ByteString
     , _pageNextId    :: PageId
     } deriving (Show, Eq)
 

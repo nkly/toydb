@@ -1,15 +1,11 @@
 {-# LANGUAGE DeriveDataTypeable, TemplateHaskell #-}
 module Database.Toy.Internal.Metadata.Types where
 
-import Control.Exception
 import Control.Lens
-import Control.Monad
 import Data.Serialize
-import Data.Typeable
-import Data.Word
+import Database.Toy.Internal.Prelude
 import Database.Toy.Internal.Pager.Types (PageId)
 import Database.Toy.Internal.Util.FixedSizeSerialize
-import System.IO
 import qualified Data.ByteString.Char8 as B
 
 

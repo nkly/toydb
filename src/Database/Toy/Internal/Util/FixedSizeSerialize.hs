@@ -1,7 +1,7 @@
 module Database.Toy.Internal.Util.FixedSizeSerialize where
 
 import Data.Serialize (Serialize)
-import Data.Word
+import Database.Toy.Internal.Prelude
 import Foreign.Storable (sizeOf)
 
 -- | Typeclass that guarantees that size of serialized

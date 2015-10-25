@@ -5,6 +5,8 @@
 
 module Database.Toy.Internal.Language.Command where
 
+import Database.Toy.Internal.Prelude
+
 type TableName  = String
 type ColumnName = String
 type IndexName  = String

@@ -1,6 +1,7 @@
 {
 module Database.Toy.Internal.Language.Parser (parseCommand) where
 
+import Database.Toy.Internal.Prelude
 import Database.Toy.Internal.Language.Lexer
 import Database.Toy.Internal.Language.Command
 }
