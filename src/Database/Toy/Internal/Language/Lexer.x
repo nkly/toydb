@@ -1,5 +1,5 @@
 {
-module Database.Toy.Language.Lexer (Token(..), TokenClass(..), scanTokens) where
+module Database.Toy.Internal.Language.Lexer (Token(..), TokenClass(..), scanTokens) where
 }
 
 %wrapper "posn"

@@ -1,7 +1,7 @@
 module Parser where
 
-import Database.Toy.Internal.Command
-import Database.Toy.Language.Parser
+import Database.Toy.Internal.Language.Command
+import Database.Toy.Internal.Language.Parser
 import Test.Hspec
 
 

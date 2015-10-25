@@ -3,8 +3,7 @@
     DBMS.
 -}
 
-{-# LANGUAGE BangPatterns #-}
-module Database.Toy.Internal.Command where
+module Database.Toy.Internal.Language.Command where
 
 type TableName  = String
 type ColumnName = String

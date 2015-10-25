@@ -1,8 +1,8 @@
 {
-module Database.Toy.Language.Parser where
+module Database.Toy.Internal.Language.Parser (parseCommand) where
 
-import Database.Toy.Language.Lexer
-import Database.Toy.Internal.Command
+import Database.Toy.Internal.Language.Lexer
+import Database.Toy.Internal.Language.Command
 }
 
 %name       command
