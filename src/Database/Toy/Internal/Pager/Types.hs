@@ -2,16 +2,15 @@
 module Database.Toy.Internal.Pager.Types where
 
 import Control.Lens
-import Data.Hashable
+import Data.Cache.LRU
 import Data.Serialize
 import Data.Time.Clock.POSIX
 import Database.Toy.Internal.Prelude
 import Database.Toy.Internal.Util.FixedSizeSerialize
-import qualified Data.HashTable.IO as HT
 
 
 data PageId = PageId Word32 | NoPageId
-    deriving (Show, Eq)
+    deriving (Show, Eq, Ord)
 
 instance Serialize PageId where
     get = do
@@ -25,10 +24,6 @@ instance Serialize PageId where
 
 instance FixedSizeSerialize PageId where
     serializedSize _ = serializedSize (0 :: Word32)
-
-instance Hashable PageId where
-    hashWithSalt salt NoPageId = error "PageId.hashWithSalt: NoPageId should not be hashed"
-    hashWithSalt salt (PageId pid) = hashWithSalt salt pid
 
 
 data Page = Page
@@ -71,12 +66,3 @@ data PagerState = PagerState
     }
 
 makeLenses ''PagerState
-
-type PageMemStorage = HT.LinearHashTable PageId (Page, POSIXTime)
-
-data InternalState = InternalState
-    { _pagerStorage      :: PageMemStorage
-    , _pagerStorageSize  :: Int
-    }
-
-makeLenses ''InternalState

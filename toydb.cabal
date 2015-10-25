@@ -29,15 +29,15 @@ library
                      , Database.Toy.Internal.Util.FixedSizeSerialize
   build-depends:       base >= 4.7 && < 5
                      , array
-                     , mtl
                      , bytestring
-                     , safe
-                     , MissingH
                      , cereal
-                     , hashable
-                     , hashtables
-                     , time
                      , lens
+                     , MissingH
+                     , mtl
+                     , safe
+                     , time
+                     , exceptions
+                     , lrucache
 
 executable toydb-repl
   main-is:             Main.hs
@@ -56,11 +56,11 @@ test-suite toydb-tests
                      , Parser
                      , Pager
   build-depends:       base >= 4.7 && < 5
+                     , array
+                     , bytestring
+                     , cereal
                      , hspec
                      , toydb
-                     , array
-                     , cereal
-                     , bytestring
 
 source-repository head
   type:     git
