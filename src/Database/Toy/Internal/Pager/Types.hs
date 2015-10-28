@@ -2,9 +2,7 @@
 module Database.Toy.Internal.Pager.Types where
 
 import Control.Lens
-import Data.Cache.LRU
 import Data.Serialize
-import Data.Time.Clock.POSIX
 import Database.Toy.Internal.Prelude
 import Database.Toy.Internal.Util.FixedSizeSerialize
 
