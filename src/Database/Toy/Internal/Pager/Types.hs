@@ -3,8 +3,10 @@ module Database.Toy.Internal.Pager.Types where
 
 import Control.Lens
 import Data.Serialize
-import Database.Toy.Internal.Prelude
+import Data.Cache.LRU (LRU)
+import Database.Toy.Internal.Prelude hiding (Handle)
 import Database.Toy.Internal.Util.FixedSizeSerialize
+import Database.Toy.Internal.Util.HasFileIO
 
 
 data PageId = PageId Word32 | NoPageId
@@ -50,7 +52,7 @@ pageOverhead = 2 * fromIntegral (serializedSize NoPageId)
 
 
 data PagerConf = PagerConf
-    { _pagerFileHandle       :: Handle
+    { _pagerFilePath         :: FilePath
     , _pagerPageSizeBytes    :: Word32
     , _pagerOffsetBytes      :: Word32
     , _pagerMaxPagesInMemory :: Int
@@ -64,3 +66,10 @@ data PagerState = PagerState
     }
 
 makeLenses ''PagerState
+
+data PagerInternalState m = PagerInternalState
+    { _pagerFileHandle :: Handle m
+    , _pagerCache :: LRU PageId Page
+    }
+
+makeLenses ''PagerInternalState

@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, DeriveDataTypeable #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, DeriveDataTypeable, TypeFamilies #-}
 module Database.Toy.Internal.Pager.Trans
     ( PagerConf(..)
     , PagerState(..)
@@ -18,9 +18,9 @@ import Control.Monad.State
 import Control.Monad.Catch
 import Data.Serialize
 import Data.Typeable
-import Database.Toy.Internal.Prelude
+import Database.Toy.Internal.Prelude hiding (Handle)
 import Database.Toy.Internal.Util.HasFileIO
-import System.IO hiding (hSeek)
+import qualified System.IO as S
 import qualified Data.ByteString as B
 import qualified Data.Cache.LRU as LRU
 
@@ -38,16 +38,18 @@ instance Exception PagerException
 -- and return tuple with result and new pager state
 runPager :: PagerIO m => PagerConf -> PagerState -> PagerT m a -> m (a, PagerState)
 runPager conf state action = do
-    let maxPagesInMem = view pagerMaxPagesInMemory conf
-        cache = LRU.newLRU $ Just $ fromIntegral maxPagesInMem
-        PagerT act = action >>= dumpAllPages
-    (result, (_, newState)) <- runStateT (runReaderT act conf) (cache, state)
+    handle <- hOpen (view pagerFilePath conf) S.ReadWriteMode
+    let internalState = PagerInternalState handle cache
+    (result, (_, newState)) <- runStateT (runReaderT act conf) (internalState, state)
     return (result, newState)
   where
     dumpAllPages resultToReturn = do
         pagesToDump <- fmap (map snd . LRU.toList) getCache
         mapM_ dumpPage pagesToDump
         return resultToReturn
+    maxPagesInMem = view pagerMaxPagesInMemory conf
+    cache = LRU.newLRU $ Just $ fromIntegral maxPagesInMem
+    PagerT act = action >>= dumpAllPages
 
 -- | Read page by its id. If page is not loaded yet, then read it from
 -- disc, probably causing LRU page to be dumped.
@@ -99,13 +101,15 @@ newPage = do
 
 type Cache = LRU.LRU PageId Page
 
-newtype PagerT m a = PagerT (ReaderT PagerConf (StateT (Cache, PagerState) m) a)
+newtype PagerT m a = PagerT (ReaderT PagerConf (StateT (PagerInternalState m, PagerState) m) a)
     deriving (Functor, Applicative, Monad, MonadIO, MonadReader PagerConf, MonadThrow)
 
 instance MonadTrans PagerT where
     lift = PagerT . lift . lift
 
 instance (Monad m, HasFileIO m) => HasFileIO (PagerT m) where
+    type Handle (PagerT m) = Handle m
+    hOpen f m = lift $ hOpen f m
     hGet h n = lift $ hGet h n
     hPut h s = lift $ hPut h s
     hSeek h m n = lift $ hSeek h m n
@@ -142,12 +146,13 @@ readFromDisk pageId = do
         Left _ -> throwM $ PageCorrupted pageId
 
 -- | Seek database file to the place where page with given id starts
-seekToPage :: PagerIO m => PageId -> PagerT m Handle
+seekToPage :: PagerIO m => PageId -> PagerT m (Handle m)
 seekToPage NoPageId = error "Pager.seekToPage: impossible page id"
 seekToPage (PageId pid) = do
-    (PagerConf handle pageSize fileOffset _) <- ask
+    handle <- getHandle
+    (PagerConf _ pageSize fileOffset _) <- ask
     let offset = toInteger $ fileOffset + pageSize * pid
-    hSeek handle AbsoluteSeek offset
+    hSeek handle S.AbsoluteSeek offset
     return handle
 
 -- | Lookup page with given id in cache. If page exists, this action
@@ -181,20 +186,24 @@ dumpPage page@(Page pageId _ _) = do
 createNewPage :: PagerIO m => PagerT m Page
 createNewPage = do
     pagesCount <- getExternalState $ view pagerPagesCount
-    (PagerConf handle pageSize _ _) <- ask
+    handle <- getHandle
+    (PagerConf _ pageSize _ _) <- ask
     let payload = B.replicate (fromIntegral pageSize - pageOverhead) 0
         page = Page (PageId pagesCount) payload NoPageId
     insertPage (view pageId page) page
-    hSeek handle SeekFromEnd 0
+    hSeek handle S.SeekFromEnd 0
     hPut handle $ encode page
     modifyExternalState (over pagerPagesCount succ)
     return page
 
 getCache :: Monad m => PagerT m Cache
-getCache = PagerT $ gets fst
+getCache = PagerT $ gets (view pagerCache . fst)
 
 setCache :: Monad m => Cache -> PagerT m ()
-setCache = PagerT . modify . first . const
+setCache = PagerT . modify . first . set pagerCache
+
+getHandle :: Monad m => PagerT m (Handle m)
+getHandle = PagerT $ gets (view pagerFileHandle . fst)
 
 getExternalState :: Monad m => (PagerState -> a) -> PagerT m a
 getExternalState fn = PagerT $ gets (fn . snd)
