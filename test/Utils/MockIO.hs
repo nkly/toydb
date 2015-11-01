@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, TypeFamilies #-}
-module MockIO where
+module Utils.MockIO where
 
 import Control.Monad.Catch
 import Control.Monad.State (StateT)

@@ -1,4 +1,4 @@
-module Parser where
+module Cases.Parser where
 
 import Database.Toy.Internal.Language.Command
 import Database.Toy.Internal.Language.Parser
@@ -95,7 +95,7 @@ testInsertUpdateDelete = do
     "delete from test;" `shouldBeParsedAs`
         (Delete "test" Nothing)
 
-testParser = do
+test = do
     testSelect
     testCreateDrop
     testInsertUpdateDelete

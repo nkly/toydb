@@ -1,10 +1,12 @@
 module Main where
 
 import Test.Hspec
-import Parser
-import Pager
+import qualified Cases.Parser
+import qualified Cases.Serialization
+import qualified Cases.Pager
 
 main = hspec $ do
-    describe "Parser" testParser
-    describe "Pager" testPager
+    describe "Parser" Cases.Parser.test
+    describe "Serialization" Cases.Serialization.test
+    describe "Pager" Cases.Pager.test
 
