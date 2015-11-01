@@ -36,7 +36,7 @@ instance Exception PagerException
 
 -- | Run Pager action with given configuration and state
 -- and return tuple with result and new pager state
-runPager :: PagerIO m => PagerConf -> PagerState -> PagerT m a -> m (a, PagerState)
+runPager :: (HasFileIO m, MonadThrow m) => PagerConf -> PagerState -> PagerT m a -> m (a, PagerState)
 runPager conf state action = do
     handle <- hOpen (view pagerFilePath conf) S.ReadWriteMode
     let internalState = PagerInternalState handle cache
@@ -53,7 +53,7 @@ runPager conf state action = do
 
 -- | Read page by its id. If page is not loaded yet, then read it from
 -- disc, probably causing LRU page to be dumped.
-readPage :: PagerIO m => PageId -> PagerT m Page
+readPage :: (HasFileIO m, MonadThrow m) => PageId -> PagerT m Page
 readPage pageId = do
     exists <- pageExists pageId
     if exists
@@ -68,7 +68,7 @@ readPage pageId = do
 -- unloaded.
 --
 -- Exception will be thrown if payload is too big for this page
-writePage :: PagerIO m => PageId -> ByteString -> PagerT m ()
+writePage :: (HasFileIO m, MonadThrow m) => PageId -> ByteString -> PagerT m ()
 writePage pageId newPayload = do
     pageSize <- asks (fromIntegral . view pagerPageSizeBytes)
     if (B.length newPayload > pageSize - pageOverhead)
@@ -79,14 +79,14 @@ writePage pageId newPayload = do
         insertPage pageId $ set pagePayload newPayload page
 
 -- | Attach one page to another in a sense of linked list
-chainPage :: PagerIO m => PageId -> PageId -> PagerT m ()
+chainPage :: (HasFileIO m, MonadThrow m) => PageId -> PageId -> PagerT m ()
 chainPage pageId chainTo = do
     page <- readPage pageId
     insertPage pageId $ set pageNextId chainTo page
 
 -- | Request new empty page. If one of empty pages is available, then reuse it,
 -- otherwise allocate new page at the end of database file.
-newPage :: PagerIO m => PagerT m Page
+newPage :: (HasFileIO m, MonadThrow m) => PagerT m Page
 newPage = do
     lastFreePageId <- getExternalState $ view pagerFreelistStartId
     case lastFreePageId of
@@ -114,19 +114,15 @@ instance (Monad m, HasFileIO m) => HasFileIO (PagerT m) where
     hPut h s = lift $ hPut h s
     hSeek h m n = lift $ hSeek h m n
 
-class (HasFileIO m, MonadThrow m) => PagerIO m
-
-instance PagerIO IO
-
 -- | Check whether page with given id exists in database
-pageExists :: PagerIO m => PageId -> PagerT m Bool
+pageExists :: Monad m => PageId -> PagerT m Bool
 pageExists NoPageId = error "Pager.pageExists: impossible page id"
 pageExists (PageId pageId) = do
     pagesCount <- getExternalState $ view pagerPagesCount
     return (pageId < pagesCount)
 
 -- | Read page with given id from disk and store it in the cache
-readFromDisk :: PagerIO m => PageId -> PagerT m Page
+readFromDisk :: (HasFileIO m, MonadThrow m) => PageId -> PagerT m Page
 readFromDisk pageId = do
     pageSize <- asks $ view pagerPageSizeBytes
     handle   <- seekToPage pageId
@@ -146,7 +142,7 @@ readFromDisk pageId = do
         Left _ -> throwM $ PageCorrupted pageId
 
 -- | Seek database file to the place where page with given id starts
-seekToPage :: PagerIO m => PageId -> PagerT m (Handle m)
+seekToPage :: HasFileIO m => PageId -> PagerT m (Handle m)
 seekToPage NoPageId = error "Pager.seekToPage: impossible page id"
 seekToPage (PageId pid) = do
     handle <- getHandle
@@ -157,7 +153,7 @@ seekToPage (PageId pid) = do
 
 -- | Lookup page with given id in cache. If page exists, this action
 -- will mark it as most recently used.
-lookupInCache :: PagerIO m => PageId -> PagerT m (Maybe Page)
+lookupInCache :: Monad m => PageId -> PagerT m (Maybe Page)
 lookupInCache pageId = do
     cache <- getCache
     case LRU.lookup pageId cache of
@@ -169,21 +165,21 @@ lookupInCache pageId = do
 
 -- | Insert or update page with given id in cache. If cache is overflown,
 -- LRU page is dumped on disk.
-insertPage :: PagerIO m => PageId -> Page -> PagerT m ()
+insertPage :: HasFileIO m => PageId -> Page -> PagerT m ()
 insertPage pageId page = do
     (newCache, toDump) <- fmap (LRU.insertInforming pageId page) getCache
     maybe (return ()) (dumpPage . snd) toDump
     setCache newCache
 
 -- | Write page to disk
-dumpPage :: PagerIO m => Page -> PagerT m ()
+dumpPage :: HasFileIO m => Page -> PagerT m ()
 dumpPage page@(Page pageId _ _) = do
     handle <- seekToPage pageId
     hPut handle $ encode page
 
 -- | Allocate new page filled with zeroes in database file and load it into
 -- cache
-createNewPage :: PagerIO m => PagerT m Page
+createNewPage :: HasFileIO m => PagerT m Page
 createNewPage = do
     pagesCount <- getExternalState $ view pagerPagesCount
     handle <- getHandle
