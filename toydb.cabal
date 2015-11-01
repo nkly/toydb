@@ -27,6 +27,7 @@ library
                      , Database.Toy.Internal.Pager.Types
                      , Database.Toy.Internal.Prelude
                      , Database.Toy.Internal.Util.FixedSizeSerialize
+                     , Database.Toy.Internal.Util.HasFileIO
   build-depends:       base >= 4.7 && < 5
                      , array
                      , bytestring
@@ -54,11 +55,14 @@ test-suite toydb-tests
   other-modules:       Main
                      , Parser
                      , Pager
+                     , MockIO
   build-depends:       base >= 4.7 && < 5
                      , array
                      , bytestring
                      , cereal
                      , hspec
+                     , mtl
+                     , exceptions
                      , toydb
 
 source-repository head
