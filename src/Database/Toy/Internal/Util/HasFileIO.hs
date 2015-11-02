@@ -8,6 +8,7 @@ import qualified System.IO as S
 class Monad m => HasFileIO m where
     type Handle m :: *
     hOpen :: S.FilePath -> S.IOMode -> m (Handle m)
+    hClose :: Handle m -> m ()
     hGet  :: Handle m -> Int -> m ByteString
     hPut  :: Handle m -> ByteString -> m ()
     hSeek :: Handle m -> S.SeekMode -> Integer -> m ()
@@ -15,6 +16,7 @@ class Monad m => HasFileIO m where
 instance HasFileIO IO where
     type Handle IO = S.Handle
     hOpen = S.openBinaryFile
+    hClose = S.hClose
     hGet = B.hGet
     hPut = B.hPut
     hSeek = S.hSeek

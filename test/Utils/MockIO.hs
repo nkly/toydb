@@ -21,6 +21,7 @@ newtype MockIO a = MockIO (StateT MockIOState IO a)
 instance HasFileIO MockIO where
     type Handle MockIO = ()
     hOpen _ _ = return ()
+    hClose _  = return ()
     hGet _ n = do
         pos <- ST.gets mockCurrentPos
         len <- fmap B.length $ ST.gets mockContents

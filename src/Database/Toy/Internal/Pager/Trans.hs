@@ -47,7 +47,7 @@ runPager conf state action = do
     dumpAllPages resultToReturn = do
         pagesToDump <- fmap (map snd . LRU.toList) getCache
         mapM_ dumpPage pagesToDump
-        -- TODO: flush and close
+        getHandle >>= hClose
         return resultToReturn
     maxPagesInMem = view pagerMaxPagesInMemory conf
     cache = LRU.newLRU $ Just $ fromIntegral maxPagesInMem
@@ -129,6 +129,7 @@ instance MonadTrans PagerT where
 instance (Monad m, HasFileIO m) => HasFileIO (PagerT m) where
     type Handle (PagerT m) = Handle m
     hOpen f m = lift $ hOpen f m
+    hClose = lift . hClose
     hGet h n = lift $ hGet h n
     hPut h s = lift $ hPut h s
     hSeek h m n = lift $ hSeek h m n
