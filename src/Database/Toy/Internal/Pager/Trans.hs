@@ -9,6 +9,7 @@ module Database.Toy.Internal.Pager.Trans
     , runPager
     , readPage
     , writePage
+    , chainPage
     , newPage
     ) where
 
@@ -78,11 +79,15 @@ writePage pageId newPayload = do
         page <- readPage pageId
         insertPage pageId $ set pagePayload newPayload page
 
--- | Attach one page to another in a sense of linked list
+-- | Set `destId` page to be the next after `sourceId` page in a
+-- sense of linked list
 chainPage :: (HasFileIO m, MonadThrow m) => PageId -> PageId -> PagerT m ()
-chainPage pageId chainTo = do
-    page <- readPage pageId
-    insertPage pageId $ set pageNextId chainTo page
+chainPage sourceId destId = do
+    source <- readPage sourceId
+    destExists <- pageExists destId
+    if destExists
+        then insertPage sourceId $ set pageNextId destId source
+        else throwM $ PageNotFound destId
 
 -- | Request new empty page. If one of empty pages is available, then reuse it,
 -- otherwise allocate new page at the end of database file.

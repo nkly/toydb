@@ -1,6 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Cases.Pager where
 
-import Control.Exception.Base (evaluate)
+import Control.Exception.Base (evaluate, ErrorCall)
+import Control.Lens
 import Data.Serialize
 import Database.Toy.Internal.Pager.Trans
 import Database.Toy.Internal.Pager.Types
@@ -8,6 +10,15 @@ import Utils.MockIO
 import Test.Hspec
 import qualified Data.ByteString.Char8 as B
 
+
+anyPagerException :: Selector PagerException
+anyPagerException = const True
+
+decodingFailedError :: Selector ErrorCall
+decodingFailedError = errorCall "Decoding failed"
+
+decodingFailed :: a
+decodingFailed = error "Decoding failed"
 
 testPagerReading = do
     it "should throw an error trying to read page with NoPageId" $
@@ -33,27 +44,68 @@ testPagerReading = do
     pagerConf = PagerConf "" pageSize 0 1
     pagerState = PagerState 1 NoPageId
     pagerConfWithOffset = PagerConf "" pageSize pagerOffset 1
-    correctPage = Page (PageId 0) (B.pack "TEST") NoPageId
-    incorrectPage = Page (PageId 10) (B.pack "NOPE") NoPageId
+    correctPage = Page (PageId 0) "TEST" NoPageId
+    incorrectPage = Page (PageId 10) "FAIL" NoPageId
     correctContents = encode correctPage
     incorrectContents = encode incorrectPage
     contentsWithOffset = B.append (B.replicate pagerOffset '\0') correctContents
-    anyPagerException = const True :: Selector PagerException
 
 testPagerWriting = do
-    it "should throw an error trying to write page with NoPageId" pending
-    it "should throw an exception trying to write overflown page" pending
-    it "should write right page correctly" pending
+    it "should throw an error trying to write page with NoPageId" $
+        (testWritePage NoPageId B.empty) `shouldThrow` (not . decodingFailedError)
+    it "should throw an exception trying to write overflown page" $
+        (testWritePage (PageId 0) "OVERFLOW") `shouldThrow` anyPagerException
+    it "should write right page correctly" $
+        (testWritePage (PageId 0) "PASS") `shouldReturn` True
+  where
+    testWritePage pageId pageContents = do
+        let originalPage = Page (PageId 0) "TEST" NoPageId
+            contents = encode originalPage
+            mockState = MockIOState contents 0
+            writePageAction = fmap fst $
+                runPager pagerConf pagerState $ writePage pageId pageContents
+            checkPageContentsApplied newPage =
+                newPage == set pagePayload pageContents originalPage
+        eitherPage <- fmap decode $ execMockIO writePageAction mockState
+        return $ either (const decodingFailed) checkPageContentsApplied eitherPage
+    pageSize = pageOverhead + 4
+    pagerConf = PagerConf "" pageSize 0 1
+    pagerState = PagerState 1 NoPageId
 
--- Test chaining NoPageId, should throw an error
--- Test chaining to NoPageId, should set nextId and leave payload as is
--- Test creating new page with no free pages available,
---      should create page with id of (pagesNumber + 1)
--- Test creating new page with free pages available,
---      should create page with id of the first available page
---      in a freelist
--- Test Pager to satisfy "max pages in memory" criterion
+testPagerChaining = do
+    it "should throw an error trying to chain page with NoPageId given" $
+        (testChainPage NoPageId (PageId 42)) `shouldThrow` (not . decodingFailedError)
+    it "should throw an exception trying to chaing page to non-existent page" $
+        (testChainPage (PageId 0) (PageId 42)) `shouldThrow` anyPagerException
+    it "should chain page to NoPageId without changing its payload" $
+        (testChainPage (PageId 0) (PageId 1)) `shouldReturn` True
+  where
+    testChainPage sourceId destId = do
+        let pageOne = Page (PageId 0) "TEST" NoPageId
+            pageTwo = Page (PageId 1) "TEST" NoPageId
+            contents = B.concat $ map encode [pageOne, pageTwo]
+            mockState = MockIOState contents 0
+            chainPageAction = fmap fst $
+                runPager pagerConf pagerState $ chainPage sourceId destId
+            checkPageContentsRemained newPage =
+                newPage == set pageNextId (PageId 1) pageOne
+        eitherPage <- fmap (decode . B.take pageSize) $ execMockIO chainPageAction mockState
+        return $ either (const decodingFailed) checkPageContentsRemained eitherPage
+    pageSize :: Num a => a
+    pageSize = pageOverhead + 4
+    pagerConf = PagerConf "" pageSize 0 1
+    pagerState = PagerState 2 NoPageId
+
+testPagerCreating = do
+    it "should create new page when no free pages available" pending
+    it "should reuse free page when free pages available" pending
+
+testPagerRestriction =
+    it "should put in memory no more pages than set up in 'max pages in memory'" pending
 
 test = do
     testPagerReading
     testPagerWriting
+    testPagerChaining
+    testPagerCreating
+    testPagerRestriction

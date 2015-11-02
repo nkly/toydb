@@ -51,3 +51,5 @@ instance MonadThrow MockIO where
 evalMockIO :: MockIO a -> MockIOState -> IO a
 evalMockIO (MockIO action) = ST.evalStateT action
 
+execMockIO :: MockIO a -> MockIOState -> IO B.ByteString
+execMockIO (MockIO action) = fmap mockContents . ST.execStateT action

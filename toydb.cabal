@@ -64,6 +64,7 @@ test-suite toydb-tests
                      , hspec
                      , mtl
                      , exceptions
+                     , lens
                      , toydb
 
 source-repository head
