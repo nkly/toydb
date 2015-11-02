@@ -22,7 +22,7 @@ import Data.Typeable
 import Database.Toy.Internal.Prelude hiding (Handle)
 import Database.Toy.Internal.Util.HasFileIO
 import qualified System.IO as S
-import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as B
 import qualified Data.Cache.LRU as LRU
 
 import Database.Toy.Internal.Pager.Types
@@ -47,6 +47,7 @@ runPager conf state action = do
     dumpAllPages resultToReturn = do
         pagesToDump <- fmap (map snd . LRU.toList) getCache
         mapM_ dumpPage pagesToDump
+        -- TODO: flush and close
         return resultToReturn
     maxPagesInMem = view pagerMaxPagesInMemory conf
     cache = LRU.newLRU $ Just $ fromIntegral maxPagesInMem
@@ -72,12 +73,12 @@ readPage pageId = do
 writePage :: (HasFileIO m, MonadThrow m) => PageId -> ByteString -> PagerT m ()
 writePage pageId newPayload = do
     pageSize <- asks (fromIntegral . view pagerPageSizeBytes)
-    if (B.length newPayload > pageSize - pageOverhead)
+    if (B.length newPayload > pagePayloadSize pageSize)
       then
         throwM $ PageOverflow pageId
       else do
         page <- readPage pageId
-        insertPage pageId $ set pagePayload newPayload page
+        insertPage $ set pagePayload newPayload page
 
 -- | Set `destId` page to be the next after `sourceId` page in a
 -- sense of linked list
@@ -86,7 +87,7 @@ chainPage sourceId destId = do
     source <- readPage sourceId
     destExists <- pageExists destId
     if destExists
-        then insertPage sourceId $ set pageNextId destId source
+        then insertPage $ set pageNextId destId source
         else throwM $ PageNotFound destId
 
 -- | Request new empty page. If one of empty pages is available, then reuse it,
@@ -98,9 +99,22 @@ newPage = do
       NoPageId -> createNewPage
       pageId   -> reusePage pageId
   where
+    createNewPage = do
+        pageId <- fmap PageId $ getExternalState $ view pagerPagesCount
+        page   <- clearPage $ Page pageId B.empty NoPageId
+        insertPage page
+        modifyExternalState (over pagerPagesCount succ)
+        return page
     reusePage pageId = do
-        (Page _ payload nextId) <- readPage pageId
+        page@(Page _ _ nextId) <- readPage pageId
         modifyExternalState (set pagerFreelistStartId nextId)
+        emptiedPage <- clearPage page
+        insertPage emptiedPage
+        return emptiedPage
+    clearPage :: Monad m => Page -> PagerT m Page
+    clearPage (Page pageId _ _) = do
+        (PagerConf _ pageSize _ _) <- ask
+        let payload = B.replicate (fromIntegral $ pagePayloadSize pageSize) '\0'
         return (Page pageId payload NoPageId)
 
 
@@ -140,7 +154,7 @@ readFromDisk pageId = do
             then
                 throwM $ PageCorrupted pageId
             else do
-                insertPage pageId page
+                insertPage page
                 return page
     decodePage0 rawPage = case decode rawPage of
         Right page -> return page
@@ -170,8 +184,8 @@ lookupInCache pageId = do
 
 -- | Insert or update page with given id in cache. If cache is overflown,
 -- LRU page is dumped on disk.
-insertPage :: HasFileIO m => PageId -> Page -> PagerT m ()
-insertPage pageId page = do
+insertPage :: HasFileIO m => Page -> PagerT m ()
+insertPage page@(Page pageId _ _) = do
     (newCache, toDump) <- fmap (LRU.insertInforming pageId page) getCache
     maybe (return ()) (dumpPage . snd) toDump
     setCache newCache
@@ -181,21 +195,6 @@ dumpPage :: HasFileIO m => Page -> PagerT m ()
 dumpPage page@(Page pageId _ _) = do
     handle <- seekToPage pageId
     hPut handle $ encode page
-
--- | Allocate new page filled with zeroes in database file and load it into
--- cache
-createNewPage :: HasFileIO m => PagerT m Page
-createNewPage = do
-    pagesCount <- getExternalState $ view pagerPagesCount
-    handle <- getHandle
-    (PagerConf _ pageSize _ _) <- ask
-    let payload = B.replicate (fromIntegral pageSize - pageOverhead) 0
-        page = Page (PageId pagesCount) payload NoPageId
-    insertPage (view pageId page) page
-    hSeek handle S.SeekFromEnd 0
-    hPut handle $ encode page
-    modifyExternalState (over pagerPagesCount succ)
-    return page
 
 getCache :: Monad m => PagerT m Cache
 getCache = PagerT $ gets (view pagerCache . fst)

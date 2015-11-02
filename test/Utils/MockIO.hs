@@ -1,6 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, TypeFamilies #-}
 module Utils.MockIO where
 
+import Control.Arrow
 import Control.Monad.Catch
 import Control.Monad.State (StateT)
 import Control.Monad.State.Class (MonadState)
@@ -49,7 +50,10 @@ instance MonadThrow MockIO where
     throwM exc = MockIO $ throwM exc
 
 evalMockIO :: MockIO a -> MockIOState -> IO a
-evalMockIO (MockIO action) = ST.evalStateT action
+evalMockIO action = fmap fst . runMockIO action
 
 execMockIO :: MockIO a -> MockIOState -> IO B.ByteString
-execMockIO (MockIO action) = fmap mockContents . ST.execStateT action
+execMockIO action = fmap snd . runMockIO action
+
+runMockIO :: MockIO a -> MockIOState -> IO (a, B.ByteString)
+runMockIO (MockIO action) = fmap (second mockContents) . ST.runStateT action

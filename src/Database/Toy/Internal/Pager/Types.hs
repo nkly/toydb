@@ -50,20 +50,22 @@ instance Serialize Page where
 pageOverhead :: Num a => a
 pageOverhead = 2 * fromIntegral (serializedSize NoPageId)
 
+pagePayloadSize :: Num a => a -> a
+pagePayloadSize pageSize = pageSize - pageOverhead
 
 data PagerConf = PagerConf
     { _pagerFilePath         :: FilePath
     , _pagerPageSizeBytes    :: Word32
     , _pagerOffsetBytes      :: Word32
     , _pagerMaxPagesInMemory :: Int
-    }
+    } deriving (Eq, Show)
 
 makeLenses ''PagerConf
 
 data PagerState = PagerState
     { _pagerPagesCount       :: Word32
     , _pagerFreelistStartId  :: PageId
-    }
+    } deriving (Eq, Show)
 
 makeLenses ''PagerState
 
